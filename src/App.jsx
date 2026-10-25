@@ -1,122 +1,140 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
 
+import CardFilme from "./components/CardFilme";
+import { useState, useEffect } from "react";
+import "./App.css";
 function App() {
-  const [count, setCount] = useState(0)
+  const [filmes, setFilmes] = useState([]);
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [dadosdousuario, setDadosdousuario] = useState({});
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  function fazerLogout() {
+  if (!token) {
+    setMensagem("Você não está logado.");
+    return;
+  }
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  setToken("");
+  setDadosdousuario({});
+  localStorage.removeItem("token");
+  setMensagem("Você saiu da sua conta.");
 }
 
-export default App
+  function fazerLogin() {
+  fetch("http://localhost:3000/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      email: email,
+      password: senha
+    })
+  })
+    .then((resposta) => {
+      if(resposta.ok){
+        return resposta.json()
+      }else{
+        setMensagem("E-mail ou senha incorretos");
+        return;
+      }
+    })
+    
+    .then((dados) => {
+     if (dados) {
+    setToken(dados.data.token);
+    localStorage.setItem("token", dados.data.token);
+    setMensagem(dados.message);
+  }
+})
+.catch((erro)=>{
+  console.log("Erro detectado", erro)
+  setMensagem("Nao foi possivel conectar ao servidor")
+}
+);
+}
+function buscarUsuario() {
+  if (!token) {
+    setMensagem("Faça login antes de consultar seu usuário.");
+    return;
+  }
+
+  fetch("http://localhost:3000/api/users/me", {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+    .then((resposta) => {
+      if (resposta.ok) {
+        return resposta.json();
+      } else {
+        setMensagem("Erro ao consultar usuário.");
+        return;
+      }
+    })
+    .then((dados) => {
+      if (dados) {
+        console.log("Dados do usuário:", dados.data);
+        setDadosdousuario(dados.data);
+        setMensagem("Usuário consultado com sucesso!");
+      }
+    })
+    .catch((erro) => {
+      console.log("Erro detectado:", erro);
+      setMensagem("Não foi possível conectar ao servidor.");
+    });
+}
+
+
+  useEffect(() => {
+    fetch("http://localhost:3000/api/movies")
+      .then((resposta) => resposta.json())
+      .then((dados) => {
+        setFilmes(dados.data);
+      })
+      .catch((erro) => {
+        console.log("Erro ao buscar filmes:", erro);
+      });
+  }, 
+  []);
+ return (
+    <div>
+      <h1>Meu Catálogo de Filmes</h1>
+        <div className="arealogin">
+        <h2>Login</h2>
+    
+  <input placeholder="Digite seu e-mail" value={email} onChange={(evento)=>setEmail(evento.target.value)}/>
+
+  <br />
+
+  <input type="password" placeholder="Digite sua senha" value={senha} onChange={(evento)=>setSenha(evento.target.value)} />
+
+  <br />
+
+  <button onClick={fazerLogin}>Entrar</button>
+  <button onClick={buscarUsuario}>Conferir meu Usuário</button>
+  <button onClick={fazerLogout}>Sair</button>
+  </div>
+      <p className="msg">{mensagem}</p>
+      <p>{dadosdousuario.name}</p>
+      <p>{dadosdousuario.email}</p>
+      <p>{dadosdousuario.id}</p>
+      {filmes.map((filme) => (
+        <CardFilme
+          key={filme.id}
+          title={filme.title}
+          description={filme.description}
+          genre={filme.genre}
+          director={filme.director}
+          releaseYear={filme.releaseYear}
+          rating={filme.rating}
+          posterUrl={filme.posterUrl}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default App;

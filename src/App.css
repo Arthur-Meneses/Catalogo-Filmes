@@ -182,3 +182,24 @@
     border-right-color: var(--border);
   }
 }
+h1{
+  color: rgb(34, 91, 117);
+  text-align: center;
+  font-style: oblique;
+}
+body{
+  background-color: rgb(32, 32, 32);
+}
+p{
+  text-align: left;
+}
+.arealogin{
+  text-align: right;
+}
+.poster{ 
+  width: 200px;
+}
+.msg{
+  text-align: right;
+  color: rgba(255, 0, 0, 0.404);
+}
